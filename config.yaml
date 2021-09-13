@@ -1,14 +1,24 @@
-path_train_df: ./input/cam16/feature_predictions/Train.csv
-path_val_df: ./input/cam16/feature_predictions/Val.csv
-path_test_df: ./input/cam16/feature_predictions/Test.csv
-path_wsi_df: ./input/cam16/feature_predictions/wsi_labels.csv
-output_path: ./out/
+data:
+  path_train_df: ./input/sicapv2_binary/feature_predictions/Train.csv
+  path_val_df: ./input/sicapv2_binary/feature_predictions/Val.csv
+  path_test_df: ./input/sicapv2_binary/feature_predictions/Test.csv
+  path_wsi_df: ./input/sicapv2_binary/feature_predictions/wsi_labels.csv
+  output_path: ./out/
 
-# input column naming convention
-col_feature_prefix: 'feature'
-col_instance_label: 'instance_label'
-col_cnn_prediction: 'cnn_prediction'
-col_bag_label: 'bag_label'
-col_bag_name: 'bag_name'
-col_bag_cnn_prediction: 'bag_cnn_prediction'
-col_bag_cnn_probability: 'bag_cnn_probability'
+  col_feature_prefix: 'feature'
+  col_instance_label: 'instance_label'
+  col_cnn_prediction: 'cnn_prediction'
+  col_bag_label: 'bag_label'
+  col_bag_name: 'bag_name'
+  col_bag_cnn_prediction: 'bag_cnn_prediction'
+  col_bag_cnn_probability: 'bag_cnn_probability'
+
+model:
+  hidden_layer_size: 0
+  inducing_points: 20
+  optimizer: sgd
+  learning_rate: 0.01
+  epochs: 20
+  prior: 0.0
+  kl_factor: 1.0
+

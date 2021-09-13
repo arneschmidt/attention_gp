@@ -36,9 +36,8 @@ class RBFKernelFn(tf.keras.layers.Layer):
         )
 
 
-def build_model(data_dims=[8]):
-    num_inducing_points = 20
-    num_training_points = 100
+def build_model(config, data_dims, num_training_points):
+    num_inducing_points = config['model']['inducing_points']
     num_classes = 1
     batch_size = 8
 
@@ -87,18 +86,10 @@ def build_model(data_dims=[8]):
         return out
 
     input = tf.keras.layers.Input(shape=data_dims)
-    # x = tf.keras.layers.Flatten()(input)
-    # x = tf.keras.layers.Dense(128, activation='relu')(x)
-    # # x = tf.keras.layers.Dense(64, activation='relu')(x)
-    # f = tf.keras.layers.Dense(8, activation=None)(x)
-    # x = tf.reshape(input, shape=(-1, 28,28,1))
-    # x = tf.keras.layers.Conv2D(4, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(-1, 28, 28, 1))(x)
-    # x = tf.keras.layers.MaxPool2D()(x)
-    # # x = tf.keras.layers.Conv2D(4, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(-1, 28, 28, 1))(input)
-    # # x = tf.keras.layers.MaxPool2D()(x)
-    # # x = tf.keras.layers.Dense(64, activation='relu')
-    # x = tf.keras.layers.Flatten()(x)
-    f = input #tf.keras.layers.Dense(8, activation='relu')(input)
+    if config['model']['hidden_layer_size'] == 0:
+        f = input
+    else:
+        f = tf.keras.layers.Dense(config['model']['hidden_layer_size'], activation='relu')(input)
 
     x = tf.keras.layers.Activation('sigmoid')(f)
     x = tfp.layers.VariationalGaussianProcess(
@@ -116,23 +107,16 @@ def build_model(data_dims=[8]):
         )(x)
 
     x = tf.keras.layers.Lambda(mc_sampling, name='instance_attention')(x)
-    # x = tf.reshape(x, [-1, 20])
-    # x = tf.keras.layers.Activation('sigmoid')(x)
-    # x = tf.keras.layers.Activation('softmax')(x)
     a = tf.keras.layers.Lambda(custom_softmax, name='instance_softmax')(x)
     x = tf.keras.layers.Lambda(attention_multiplication)([a,f])
 
     x = tf.reshape(x, shape=[mc_samples, 1, -1])
-    # x = tf.reshape(x, shape=[ 1, -1])
-    # x = tf.keras.layers.Dense(8, activation='relu')(x)
     x = tf.keras.layers.Dense(2, activation='softmax',  name='bag_softmax_a')(x)
     x = tf.keras.layers.Lambda(my_reshape, name='bag_softmax')(x)
     output = tf.keras.layers.Lambda(mc_integration)(x)
-    # output = tf.reshape(x, shape=[1])
-    # output = tf.expand_dims(x, axis=1)
 
     model = tf.keras.Model(inputs=input, outputs=output, name="sgp_mil")
-    model.add_loss(kl_loss(model, batch_size, num_training_points))
+    model.add_loss(kl_loss(model, num_training_points, config['model']['kl_factor']))
     # model.build()
 
     instance_model = tf.keras.Model(inputs=model.inputs, outputs=model.get_layer('instance_attention').output)
@@ -143,23 +127,18 @@ def build_model(data_dims=[8]):
 
     return model, instance_model, bag_level_uncertainty_model
 
-def kl_loss(head, batch_size, num_training_points):
+def kl_loss(head, num_training_points, kl_factor):
     # tf.print('kl_div: ', kl_div)
     num_training_points = tf.constant(num_training_points, dtype=tf.float32)
-    batch_size = tf.constant(batch_size, dtype=tf.float32)
 
     layer_name = 'variational_gaussian_process'
     vgp_layer = head.get_layer(layer_name)
 
     def _kl_loss():
-        # kl_weight = tf.cast(0.001 * batch_size / num_training_points, tf.float32)
-        kl_weight = tf.cast(1.0 / num_training_points, tf.float32)
+        kl_weight = tf.cast(kl_factor / num_training_points, tf.float32)
         kl_div = tf.reduce_sum(vgp_layer.submodules[5].surrogate_posterior_kl_divergence_prior())
 
         loss = tf.multiply(kl_weight, kl_div)
-        # tf.print('kl_weight: ', kl_weight)
-        # tf.print('kl_loss: ', loss)
-        # # tf.print('u_var: ', head.variables[4])
         return loss
 
     return _kl_loss
