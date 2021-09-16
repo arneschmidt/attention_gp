@@ -34,18 +34,6 @@ def att_evaluation(instance_model, test_gen):
     print('Correct attention std: ',  str(correct_att_std))
     print('Wrong attention std: ',  str(wrong_att_std))
 
-def _plot_images(x_bag, bag_pred, mean, std, save_path):
-    f, axarr = plt.subplots(3, 3)
-    f.suptitle('Bag pred probability: ' + str(bag_pred[1]), fontsize=16)
-    for i in range(3):
-        for j in range(3):
-            n = (i*3) + j
-            axarr[i, j].imshow(x_bag[n], cmap='gray_r')
-            axarr[i, j].set_title('Mean:' + str(np.round(mean[n][0], 2)) + ' Std:' + str(np.round(std[n][0], 2)) )
-    f.tight_layout(pad=1.5)
-    plt.savefig(save_path)
-    plt.close()
-
 def _correct_att_prediction(mean, std, instance_gt):
     am = np.argmax(mean)
     am_std = std[am]
