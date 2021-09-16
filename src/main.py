@@ -29,7 +29,6 @@ def main():
     train_gen = data.generate_data('train')
     val_gen = data.generate_data('val')
 
-
     model, instance_model, bag_level_uncertainty_model = build_model(config, train_gen.images[0][0].shape, len(train_gen))
     model.fit(train_gen, epochs=int(config['model']['epochs']), validation_data=val_gen)
     test_gen = data.generate_data('test')
