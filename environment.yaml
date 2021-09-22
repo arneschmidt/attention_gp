@@ -101,6 +101,7 @@ dependencies:
     - mako==1.1.3
     - markupsafe==1.1.1
     - matplotlib==3.3.2
+    - mil==1.0.5
     - mlflow==1.11.0
     - msrest==0.6.19
     - numpy==1.18.5
@@ -133,4 +134,4 @@ dependencies:
     - typeguard==2.9.1
     - websocket-client==0.57.0
     - xlrd==1.2.0
-prefix: /home/arne/miniconda3/envs/tensorflow_2_3
+prefix: /home/arne/miniconda3/envs/attention_gp

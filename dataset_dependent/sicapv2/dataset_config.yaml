@@ -1,0 +1,14 @@
+data:
+  dataset_name: att_sicapv2
+  input_path: ./input/sicapv2/feature_predictions_128/
+  train_file: Train.csv
+  val_file: Val.csv
+  test_file: Test.csv
+  wsi_file: wsi_labels.csv
+  output_path: ./out/
+
+  num_classes: 6
+  type: prostate_cancer # binary, prostate_cancer
+  cut_bags: False
+
+

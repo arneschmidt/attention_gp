@@ -1,31 +1,27 @@
 import pandas as pd
 import numpy as np
-from sklearn.metrics import cohen_kappa_score, confusion_matrix
+from sklearn.metrics import cohen_kappa_score, confusion_matrix, f1_score, accuracy_score
 
-def calc_wsi_prostate_cancer_metrics(wsi_predict_dataframe, wsi_gt_dataframe):
-    wsi_predict_dataframe = get_gleason_score_and_isup_grade(wsi_predict_dataframe)
-    wsi_gt_dataframe = get_gleason_score_and_isup_grade(wsi_gt_dataframe)
-
+def calc_wsi_prostate_cancer_metrics(gt, predictions):
+    predictions = np.argmax(predictions, axis=-1)
+    gt = np.argmax(gt, axis=-1)
     metrics_dict = {}
+    metrics_dict['test_cohens_quadratic_kappa'] = cohen_kappa_score(gt, predictions, weights='quadratic')
+    metrics_dict['test_f1_score'] = f1_score(gt, predictions, average='macro')
+    metrics_dict['test_accuracy'] = accuracy_score(gt, predictions)
+    # confusion_matrices = {}
+    #
+    # confusion_matrices['wsi_isup_confusion_matrix'] = confusion_matrix(gt,
+    #                                                                    predictions,
+    #                                                                    labels=[0, 1, 2, 3, 4, 5])
+    # artifacts = {}
+    # artifacts['confusion_matrics'] = confusion_matrices
 
-    metrics_dict['wsi_gs_cohens_quadratic_kappa'] = cohen_kappa_score(wsi_gt_dataframe['gleason_score'],
-                                                                      wsi_predict_dataframe['gleason_score'],
-                                                                      weights='quadratic')
-    metrics_dict['wsi_isup_cohens_quadratic_kappa'] = cohen_kappa_score(wsi_gt_dataframe['isup_grade'],
-                                                                        wsi_predict_dataframe['isup_grade'],
-                                                                        weights='quadratic')
-    confusion_matrices = {}
-    confusion_matrices['wsi_gs_confusion_matrix'] = confusion_matrix(wsi_gt_dataframe['gleason_score'],
-                                                                     wsi_predict_dataframe['gleason_score'],
-                                                                     labels=[0, 6, 7, 8, 9, 10])
-    confusion_matrices['wsi_isup_confusion_matrix'] = confusion_matrix(wsi_gt_dataframe['isup_grade'],
-                                                                       wsi_predict_dataframe['isup_grade'],
-                                                                       labels=[0, 1, 2, 3, 4, 5])
-    artifacts = {}
-    artifacts['confusion_matrics'] = confusion_matrices
+    conf_matrix = confusion_matrix(gt,
+                                   predictions,
+                                   labels=[0, 1, 2, 3, 4, 5])
 
-    value_to_be_optimized = (metrics_dict['wsi_gs_cohens_quadratic_kappa'] + metrics_dict['wsi_isup_cohens_quadratic_kappa'])/2
-    return metrics_dict, artifacts, value_to_be_optimized
+    return metrics_dict, conf_matrix
 
 
 def get_gleason_score_and_isup_grade(wsi_df):

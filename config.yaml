@@ -1,9 +1,6 @@
 data:
-  path_train_df: ./input/sicapv2_binary/feature_predictions/Train.csv
-  path_val_df: ./input/sicapv2_binary/feature_predictions/Val.csv
-  path_test_df: ./input/sicapv2_binary/feature_predictions/Test.csv
-  path_wsi_df: ./input/sicapv2_binary/feature_predictions/wsi_labels.csv
-  output_path: ./out/
+  dataset_config: ./dataset_dependent/sicapv2/dataset_config.yaml
+  artifact_dir: ./out
 
   col_feature_prefix: 'feature'
   col_instance_label: 'instance_label'
@@ -14,11 +11,18 @@ data:
   col_bag_cnn_probability: 'bag_cnn_probability'
 
 model:
-  hidden_layer_size: 0
-  inducing_points: 20
-  optimizer: sgd
-  learning_rate: 0.01
-  epochs: 20
+  hidden_layer_size: 128
+  inducing_points: 128
+  optimizer: adam
+  learning_rate: 0.0001
+  epochs: 2
   prior: 0.0
   kl_factor: 1.0
+  metrics_for_model_saving: val_categorical_accuracy
+  load_model: None # 'None' or path to experiment folder which containes 'models' directory with .h5 files
+  save_model: True # True or False
 
+logging:
+  log_artifacts: False
+  run_name: default
+  tracking_url: ./mlruns #/home/arne/projects/mlruns

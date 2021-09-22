@@ -1,19 +1,21 @@
+import os
 import pandas as pd
 import tensorflow as tf
 import numpy as np
 
 from loading import get_bag_level_information, load_dataframe
 from data_generator import DataGenerator
+from utils.wsi_prostate_cancer_utils import get_gleason_score_and_isup_grade
 
 
 class Data():
     def __init__(self, config):
         self.config = config
-        self.wsi_df = pd.read_csv(self.config['path_wsi_df'])
+        self.wsi_df = pd.read_csv(os.path.join(self.config['input_path'], self.config['wsi_file']))
 
     def generate_data(self, split: str):
         bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels = self.load(split)
-        images, labels = self.prepare_bags(features, bag_names_per_instance, bag_labels_per_instance)
+        images, labels = self.prepare_bags(features, bag_names, bag_labels, bag_names_per_instance)
 
         if split == 'train':
             shuffle = True
@@ -26,32 +28,54 @@ class Data():
     def load(self, split: str):
         df = None
         if split =='train':
-            df = pd.read_csv(self.config['path_train_df'])
+            df = pd.read_csv(os.path.join(self.config['input_path'], self.config['train_file']))
         elif split =='val':
-            df = pd.read_csv(self.config['path_val_df'])
+            df = pd.read_csv(os.path.join(self.config['input_path'], self.config['val_file']))
         elif split =='test':
-            df = pd.read_csv(self.config['path_test_df'])
+            df = pd.read_csv(os.path.join(self.config['input_path'], self.config['test_file']))
 
         features, bag_labels_per_instance, bag_names_per_instance, instance_labels = load_dataframe(df, self.config)
-        indices = self.wsi_df['slide'].isin(np.unique(bag_names_per_instance))
-        bag_names = self.wsi_df['slide'].loc[indices]
-        bag_labels = self.wsi_df['P'].loc[indices]
+        if self.config['type'] == 'binary':
+            indices = self.wsi_df['slide'].isin(np.unique(bag_names_per_instance))
+            bag_names = np.array(self.wsi_df['slide'].loc[indices])
+            bag_labels = np.array(self.wsi_df['P'].loc[indices])
+        else:
+            # TODO: find only wsi of the train/val/test split that is generated
+            bag_names = np.unique(bag_names_per_instance)
+            if 'isup_grade' not in self.wsi_df.columns:
+                self.wsi_df = get_gleason_score_and_isup_grade(self.wsi_df)
+            indices = self.wsi_df['slide_id'].isin(bag_names)
+            bag_labels = tf.keras.utils.to_categorical(np.array(self.wsi_df['isup_grade'][indices]))
+            # bag_labels = np.array(self.wsi_df['isup_grade'][indices])
 
         return bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels
 
-    def prepare_bags(self, features, bag_names_per_instance, bag_labels_per_instance):
-        bag_names = np.unique(bag_names_per_instance)
+    def prepare_bags(self, features, bag_names, bag_labels, bag_names_per_instance):
+        bag_names = bag_names
         images = []
         labels = []
 
         for i in range(len(bag_names)):
             bag_name = bag_names[i]
             id_bool = (bag_name == bag_names_per_instance)
+            bag_features = features[id_bool]
+            if self.config['cut_bags']:
+                bag_features = self.cut_bags(bag_features)
 
-            images.append(features[id_bool])
-            labels.append(np.unique(bag_labels_per_instance[id_bool]))
+            images.append(bag_features)
+            labels.append(bag_labels[i])
 
         return images, labels
+
+    def cut_bags(self, features):
+        max_n = 500
+        norms = np.linalg.norm(features, axis=-1)
+        sorted = np.argsort(norms)[::-1]
+        selected_ids = sorted[0:max_n]
+        features = features[selected_ids]
+
+        return features
+
 
 
     # def _prepare_data(self, ds, features, bag_names_per_instance):

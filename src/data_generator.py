@@ -44,9 +44,13 @@ class DataGenerator(tf.keras.utils.Sequence):
         # bag = np.array(images_temp, dtype=np.float32) / 255
         bag = np.array(images_temp, dtype=np.float32)
 
-        if label_temp == 1:
-            bag_label = np.ones((1, 1))
-        else:
-            bag_label = np.zeros((1, 1))
+        # if label_temp == 1:
+        #     bag_label = np.ones((1, 1))
+        # else:
+        #     bag_label = np.zeros((1, 1))
+
+        # bag_label = np.ones((1, 1))*label_temp
+        bag_label= label_temp #label_temp)
+        # bag_label = np.expand_dims(bag_label, axis=0)
 
         return bag, bag_label
