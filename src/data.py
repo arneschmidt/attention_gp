@@ -45,7 +45,12 @@ class Data():
             if 'isup_grade' not in self.wsi_df.columns:
                 self.wsi_df = get_gleason_score_and_isup_grade(self.wsi_df)
             indices = self.wsi_df['slide_id'].isin(bag_names)
-            bag_labels = tf.keras.utils.to_categorical(np.array(self.wsi_df['isup_grade'][indices]))
+            if self.config['type'] == 'isup':
+                bag_labels = tf.keras.utils.to_categorical(np.array(self.wsi_df['isup_grade'][indices]))
+            elif self.config['type'] == 'gleason_score':
+                bag_labels = tf.keras.utils.to_categorical(np.array(self.wsi_df['gleason_score'][indices]), num_classes=6)
+            else:
+                raise Exception('Choose valid dataset type (data: dataset_type:')
             # bag_labels = np.array(self.wsi_df['isup_grade'][indices])
 
         return bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels

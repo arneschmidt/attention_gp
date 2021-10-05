@@ -57,7 +57,7 @@ class MLFlowCallback(tensorflow.keras.callbacks.Callback):
 
         # Check if new best model
         metrics_for_model_saving = self.config['model']['metrics_for_model_saving']
-        if metrics_dict[metrics_for_model_saving] > self.best_result:
+        if metrics_dict[metrics_for_model_saving] >= self.best_result:
             self.new_best_result = True
             print("\n New best model! Saving model..")
             self.best_result = metrics_dict[metrics_for_model_saving]

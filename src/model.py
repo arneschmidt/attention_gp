@@ -35,7 +35,7 @@ class Model:
             metrics = calc_wsi_cancer_binary_metrics(predictions, gt)
             conf_matrix = []
             # bag_level_evaluation(test_gen, self.bag_level_uncertainty_model)
-        elif self.config['data']['type'] == 'prostate_cancer':
+        else:
             predictions = self.model.predict(test_gen)
             predictions = np.reshape(predictions, [-1, test_gen.labels[0].shape[0]])
             metrics, conf_matrix = calc_wsi_prostate_cancer_metrics(test_gen.labels, predictions)
