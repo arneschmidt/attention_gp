@@ -55,21 +55,21 @@ def bag_level_evaluation(test_gen, bag_level_uncertainty_model: tf.keras.Model):
     for i in range(n):
         y_bag = test_gen.labels[i]
         bag_pred = preds[i]
-        mean = np.mean(bag_pred, axis=0)[1]
-        std = np.std(bag_pred, axis=0)[1]
-        correct_pred = (np.round(mean) == y_bag)[0]
+        mean = np.mean(bag_pred, axis=0)
+        std = np.std(bag_pred, axis=0)
+        pred_class = np.argmax(mean)
+
+        correct_pred = (pred_class == np.argmax(y_bag))
         if correct_pred:
             correct_preds += 1
-            correct_stds += std
+            correct_stds += np.mean(std)
         else:
             wrong_preds += 1
-            wrong_stds += std
+            wrong_stds += np.mean(std)
 
     accuracy = correct_preds/n
     correct_pred_std = correct_stds/correct_preds
     wrong_pred_std = wrong_stds/wrong_preds
 
-    print('Bag Accuracy: ' + str(accuracy)
-          + '; correct_pred_std: ' + str(correct_pred_std)
-          + '; wrong_pred_std: ' + str(wrong_pred_std))
+    return {'bag_accuracy': accuracy, 'correct_pred_std': correct_pred_std, 'wrong_pred_std': wrong_pred_std}
 

@@ -39,6 +39,10 @@ class Model:
             predictions = self.model.predict(test_gen)
             predictions = np.reshape(predictions, [-1, test_gen.labels[0].shape[0]])
             metrics, conf_matrix = calc_wsi_prostate_cancer_metrics(test_gen.labels, predictions)
+            if self.bag_level_uncertainty_model is not None:
+                result_dict = bag_level_evaluation(test_gen, self.bag_level_uncertainty_model)
+                print(result_dict)
+
         print(metrics)
         print(conf_matrix)
         return metrics, conf_matrix
