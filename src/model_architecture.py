@@ -102,8 +102,9 @@ def build_model(config, data_dims, num_training_points):
         f = tf.keras.layers.Dense(config['model']['hidden_layer_size'], activation='relu')(input)
     # f = tf.keras.layers.Dense(128, activation='relu')(f)
     if config['model']['attention'] == 'gp':
-        x = tf.keras.layers.Dense(32, activation='relu')(f)
-        x = tf.keras.layers.Activation('sigmoid')(x)
+        # x = tf.keras.layers.Dense(128, activation='relu')(f)
+        x = tf.keras.layers.Dense(32, activation='sigmoid')(f)
+        # x = tf.keras.layers.Activation('sigmoid')(f)
         # x = tf.keras.layers.Dense(128, activation='relu')(x)
         x = tfp.layers.VariationalGaussianProcess(
             mean_fn=lambda x: tf.ones([1]) * 0.0,
@@ -111,7 +112,7 @@ def build_model(config, data_dims, num_training_points):
             kernel_provider=RBFKernelFn(),
             event_shape=[1],  # output dimensions
             inducing_index_points_initializer=tf.keras.initializers.RandomUniform(
-                minval=0.3, maxval=0.7, seed=None
+                minval=0.0, maxval=1.0, seed=None
             ),
             jitter=10e-3,
             convert_to_tensor_fn=tfp.distributions.Distribution.sample,
