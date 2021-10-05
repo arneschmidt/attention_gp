@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 import numpy as np
 import tensorflow_addons as tfa
+from utils.layers import Mil_Attention
 
 class RBFKernelFn(tf.keras.layers.Layer):
     """
@@ -78,11 +79,20 @@ def build_model(config, data_dims, num_training_points):
         f = i[1]
         # tf.print('attention', a)
         # tf.print('features', f)
-        out = tf.linalg.matvec(f, a, transpose_a=True)
+        if config['model']['attention'] == 'gp':
+            out = tf.linalg.matvec(f, a, transpose_a=True)
+        else:
+            a = tf.reshape(a, shape=[-1])
+            out = tf.linalg.matvec(f, a, transpose_a=True)
+            out = tf.reshape(out, [1, f.shape[1]])
         return out
 
-    def my_reshape(x):
+    def reshape_pre_mc_integration(x):
         out = tf.reshape(x, shape=[1, mc_samples, num_classes])
+        return out
+
+    def reshape_final(x):
+        out = tf.reshape(x, shape=[num_classes])
         return out
 
     input = tf.keras.layers.Input(shape=data_dims)
@@ -91,36 +101,46 @@ def build_model(config, data_dims, num_training_points):
     else:
         f = tf.keras.layers.Dense(config['model']['hidden_layer_size'], activation='relu')(input)
     # f = tf.keras.layers.Dense(128, activation='relu')(f)
-    x = tf.keras.layers.Activation('sigmoid')(f)
-    x = tfp.layers.VariationalGaussianProcess(
-        mean_fn=lambda x: tf.ones([1]) * 0.0,
-        num_inducing_points=num_inducing_points,
-        kernel_provider=RBFKernelFn(),
-        event_shape=[1],  # output dimensions
-        inducing_index_points_initializer=tf.keras.initializers.RandomUniform(
-            minval=0.3, maxval=0.7, seed=None
-        ),
-        jitter=10e-3,
-        convert_to_tensor_fn=tfp.distributions.Distribution.sample,
-        variational_inducing_observations_scale_initializer=tf.initializers.constant(
-            0.001 * np.tile(np.eye(num_inducing_points, num_inducing_points), (1, 1, 1))),
-        )(x)
+    if config['model']['attention'] == 'gp':
+        x = tf.keras.layers.Dense(32, activation='relu')(f)
+        x = tf.keras.layers.Activation('sigmoid')(x)
+        # x = tf.keras.layers.Dense(128, activation='relu')(x)
+        x = tfp.layers.VariationalGaussianProcess(
+            mean_fn=lambda x: tf.ones([1]) * 0.0,
+            num_inducing_points=num_inducing_points,
+            kernel_provider=RBFKernelFn(),
+            event_shape=[1],  # output dimensions
+            inducing_index_points_initializer=tf.keras.initializers.RandomUniform(
+                minval=0.3, maxval=0.7, seed=None
+            ),
+            jitter=10e-3,
+            convert_to_tensor_fn=tfp.distributions.Distribution.sample,
+            variational_inducing_observations_scale_initializer=tf.initializers.constant(
+                0.001 * np.tile(np.eye(num_inducing_points, num_inducing_points), (1, 1, 1))),
+            )(x)
 
-    x = tf.keras.layers.Lambda(mc_sampling, name='instance_attention')(x)
-    a = tf.keras.layers.Lambda(custom_softmax, name='instance_softmax')(x)
-    x = tf.keras.layers.Lambda(attention_multiplication)([a,f])
+        x = tf.keras.layers.Lambda(mc_sampling, name='instance_attention')(x)
+        a = tf.keras.layers.Lambda(custom_softmax, name='instance_softmax')(x)
+        x = tf.keras.layers.Lambda(attention_multiplication)([a, f])
 
-    x = tf.reshape(x, shape=[mc_samples, 1, -1])
-    x = tf.keras.layers.Dense(num_classes, activation='softmax',  name='bag_softmax_a')(x)
-    x = tf.keras.layers.Lambda(my_reshape, name='bag_softmax')(x)
-    output = tf.keras.layers.Lambda(mc_integration)(x)
+        x = tf.reshape(x, shape=[mc_samples, 1, -1])
+        x = tf.keras.layers.Dense(num_classes, activation='softmax', name='bag_softmax_a')(x)
+        x = tf.keras.layers.Lambda(reshape_pre_mc_integration, name='bag_softmax')(x)
+        output = tf.keras.layers.Lambda(mc_integration)(x)
+    else:
+        a = Mil_Attention(f.shape[1], output_dim=0, name='instance_attention')(f)
+        x = tf.keras.layers.Lambda(attention_multiplication)([a, f])
+        x = tf.keras.layers.Dense(num_classes, activation='softmax', name='bag_softmax_a')(x)
+        output = tf.keras.layers.Lambda(reshape_final)(x)
 
     model = tf.keras.Model(inputs=input, outputs=output, name="sgp_mil")
-    model.add_loss(kl_loss(model, num_training_points, config['model']['kl_factor']))
-    # model.build()
-
     instance_model = tf.keras.Model(inputs=model.inputs, outputs=model.get_layer('instance_attention').output)
-    bag_level_uncertainty_model = tf.keras.Model(inputs=model.inputs, outputs=model.get_layer('bag_softmax').output)
+
+    if config['model']['attention'] == 'gp':
+        bag_level_uncertainty_model =  tf.keras.Model(inputs=model.inputs, outputs=model.get_layer('bag_softmax').output)
+        model.add_loss(kl_loss(model, num_training_points, config['model']['kl_factor']))
+    else:
+        bag_level_uncertainty_model = None
 
     if num_classes == 2:
         loss  = tf.keras.losses.CategoricalCrossentropy()

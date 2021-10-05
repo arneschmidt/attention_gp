@@ -11,7 +11,8 @@ data:
   col_bag_cnn_probability: 'bag_cnn_probability'
 
 model:
-  hidden_layer_size: 64
+  attention: gp # deterministic, gp
+  hidden_layer_size: 128
   inducing_points: 64
   optimizer: adam
   learning_rate: 0.001
