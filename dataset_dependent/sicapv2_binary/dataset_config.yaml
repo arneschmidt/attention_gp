@@ -8,6 +8,6 @@ data:
   output_path: ./out/
 
   num_classes: 2
-  type: binary # binary, prostate_cancer
+  type: binary # binary, isup, gleason_score
   cut_bags: True
 

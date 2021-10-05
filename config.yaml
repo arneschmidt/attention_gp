@@ -11,11 +11,11 @@ data:
   col_bag_cnn_probability: 'bag_cnn_probability'
 
 model:
-  hidden_layer_size: 128
-  inducing_points: 128
+  hidden_layer_size: 64
+  inducing_points: 64
   optimizer: adam
-  learning_rate: 0.0001
-  epochs: 2
+  learning_rate: 0.001
+  epochs: 50
   prior: 0.0
   kl_factor: 1.0
   metrics_for_model_saving: val_categorical_accuracy

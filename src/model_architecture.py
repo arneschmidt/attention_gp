@@ -90,7 +90,7 @@ def build_model(config, data_dims, num_training_points):
         f = input
     else:
         f = tf.keras.layers.Dense(config['model']['hidden_layer_size'], activation='relu')(input)
-
+    # f = tf.keras.layers.Dense(128, activation='relu')(f)
     x = tf.keras.layers.Activation('sigmoid')(f)
     x = tfp.layers.VariationalGaussianProcess(
         mean_fn=lambda x: tf.ones([1]) * 0.0,

@@ -27,7 +27,7 @@ def calc_wsi_prostate_cancer_metrics(gt, predictions):
 def get_gleason_score_and_isup_grade(wsi_df):
     gleason_primary = np.array(wsi_df['Gleason_primary'])
     gleason_secondary = np.array(wsi_df['Gleason_secondary'])
-    wsi_df['gleason_score'] = gleason_primary + gleason_secondary
+    wsi_df['gleason_score'] = np.clip(np.array(gleason_primary + gleason_secondary - 5), a_min=0, a_max=5)
     isup_grade = np.full(shape=len(wsi_df), fill_value=-1)
     isup_grade = np.where(np.logical_and(gleason_primary == 0, gleason_secondary == 0), 0, isup_grade)
     isup_grade = np.where(np.logical_and(gleason_primary == 3, gleason_secondary == 3), 1, isup_grade)
