@@ -57,18 +57,19 @@ class MLFlowCallback(tensorflow.keras.callbacks.Callback):
 
         # Check if new best model
         metrics_for_model_saving = self.config['model']['metrics_for_model_saving']
-        if metrics_dict[metrics_for_model_saving] >= self.best_result:
-            self.new_best_result = True
-            print("\n New best model! Saving model..")
-            self.best_result = metrics_dict[metrics_for_model_saving]
-            self.best_weights = self.model.get_weights()
+        if metrics_for_model_saving != 'None':
+            if metrics_dict[metrics_for_model_saving] >= self.best_result:
+                self.new_best_result = True
+                print("\n New best model! Saving model..")
+                self.best_result = metrics_dict[metrics_for_model_saving]
+                self.best_weights = self.model.get_weights()
 
-            if self.config["model"]["save_model"]:
-                self._save_model()
-            mlflow.log_metric("best_" + metrics_for_model_saving, metrics_dict[metrics_for_model_saving])
-            mlflow.log_metric("saved_model_epoch", self.finished_epochs)
-        else:
-            self.new_best_result = False
+                if self.config["model"]["save_model"]:
+                    self._save_model()
+                mlflow.log_metric("best_" + metrics_for_model_saving, metrics_dict[metrics_for_model_saving])
+                mlflow.log_metric("saved_model_epoch", self.finished_epochs)
+            else:
+                self.new_best_result = False
 
     def _save_model(self):
         save_dir = os.path.join(self.config["output_dir"], "models")

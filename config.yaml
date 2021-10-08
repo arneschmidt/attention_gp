@@ -1,6 +1,6 @@
 data:
   dataset_config: ./dataset_dependent/sicapv2/dataset_config.yaml
-  artifact_dir: ./out
+  artifact_dir: ./dataset_dependent/sicapv2/gp
 
   col_feature_prefix: 'feature'
   col_instance_label: 'instance_label'
@@ -12,18 +12,27 @@ data:
 
 model:
   attention: gp # deterministic, gp
-  hidden_layer_size: 128
+  class_weighted_loss: True
+  hidden_layer_size_0: 128
+  hidden_layer_size_1: 128
+  hidden_layer_size_2: 64
+  hidden_layer_size_att: 0
+  hidden_layer_act_att: relu
+  att_sigmoid: False
   inducing_points: 64
   optimizer: adam
-  learning_rate: 0.0005
-  epochs: 20
+  learning_rate: 0.001
+  lr_decay_after_epoch: 10
+  lr_decay_factor: -0.1
+  epochs: 100
   prior: 0.0
   kl_factor: 1.0
-  metrics_for_model_saving: val_categorical_accuracy
+  metrics_for_model_saving: None # val_categorical_accuracy or None
   load_model: None # 'None' or path to experiment folder which containes 'models' directory with .h5 files
   save_model: True # True or False
 
 logging:
   log_artifacts: False
-  run_name: default
+  save_predictions: True
+  run_name: auto
   tracking_url: ./mlruns #/home/arne/projects/mlruns
