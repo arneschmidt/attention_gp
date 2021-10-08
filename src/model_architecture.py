@@ -1,5 +1,6 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
+import tensorflow_addons as tfa
 import numpy as np
 import tensorflow_addons as tfa
 from utils.layers import Mil_Attention
@@ -96,28 +97,38 @@ def build_model(config, data_dims, num_training_points):
         return out
 
     input = tf.keras.layers.Input(shape=data_dims)
-    if config['model']['hidden_layer_size'] == 0:
+    if config['model']['hidden_layer_size_0'] == 0:
         f = input
     else:
-        f = tf.keras.layers.Dense(config['model']['hidden_layer_size'], activation='relu')(input)
-    # f = tf.keras.layers.Dense(128, activation='relu')(f)
+        f = tf.keras.layers.Dense(config['model']['hidden_layer_size_0'], activation='relu')(input)
+
+    if config['model']['hidden_layer_size_1'] != 0:
+        f = tf.keras.layers.Dense(config['model']['hidden_layer_size_1'], activation='relu')(input)
+
+    if config['model']['hidden_layer_size_2'] != 0:
+        f = tf.keras.layers.Dense(config['model']['hidden_layer_size_2'], activation='relu')(input)
+
+    if config['model']['hidden_layer_size_att'] == 0:
+        x = f
+    else:
+        x = tf.keras.layers.Dense(config['model']['hidden_layer_size_att'], activation=config['model']['hidden_layer_act_att'])(f)
+
     if config['model']['attention'] == 'gp':
-        # x = tf.keras.layers.Dense(128, activation='relu')(f)
-        x = tf.keras.layers.Dense(32, activation='sigmoid')(f)
-        # x = tf.keras.layers.Activation('sigmoid')(f)
+        if config['model']['att_sigmoid']:
+            x = tf.keras.layers.Activation('sigmoid')(x)
         # x = tf.keras.layers.Dense(128, activation='relu')(x)
         x = tfp.layers.VariationalGaussianProcess(
-            mean_fn=lambda x: tf.ones([1]) * 0.0,
+            mean_fn=lambda x: tf.ones([1]) * config['model']['prior'],
             num_inducing_points=num_inducing_points,
             kernel_provider=RBFKernelFn(),
             event_shape=[1],  # output dimensions
             inducing_index_points_initializer=tf.keras.initializers.RandomUniform(
-                minval=0.0, maxval=1.0, seed=None
+                minval=0.3, maxval=0.7, seed=None
             ),
             jitter=10e-3,
             convert_to_tensor_fn=tfp.distributions.Distribution.sample,
             variational_inducing_observations_scale_initializer=tf.initializers.constant(
-                0.001 * np.tile(np.eye(num_inducing_points, num_inducing_points), (1, 1, 1))),
+                0.01 * np.tile(np.eye(num_inducing_points, num_inducing_points), (1, 1, 1))),
             )(x)
 
         x = tf.keras.layers.Lambda(mc_sampling, name='instance_attention')(x)
@@ -129,8 +140,9 @@ def build_model(config, data_dims, num_training_points):
         x = tf.keras.layers.Lambda(reshape_pre_mc_integration, name='bag_softmax')(x)
         output = tf.keras.layers.Lambda(mc_integration)(x)
     else:
-        a = Mil_Attention(f.shape[1], output_dim=0, name='instance_attention')(f)
+        a = Mil_Attention(f.shape[1], output_dim=0, name='instance_attention')(x)
         x = tf.keras.layers.Lambda(attention_multiplication)([a, f])
+        x = tf.keras.layers.Dense(64, activation='relu')(x)
         x = tf.keras.layers.Dense(num_classes, activation='softmax', name='bag_softmax_a')(x)
         output = tf.keras.layers.Lambda(reshape_final)(x)
 

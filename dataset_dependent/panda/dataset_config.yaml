@@ -8,7 +8,7 @@ data:
   output_path: ./out/
 
   num_classes: 6
-  type: prostate_cancer # binary, prostate_cancer
+  type: isup # binary, isup, gleason_grade
   cut_bags: False
 
 
