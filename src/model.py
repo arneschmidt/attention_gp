@@ -54,11 +54,10 @@ class Model:
         else:
             predictions = np.reshape(predictions, [-1, test_gen.labels[0].shape[0]])
             metrics, conf_matrix = calc_wsi_prostate_cancer_metrics(gt, predictions)
-            if self.bag_level_uncertainty_model is not None:
-                uncertainty_metric = bag_level_evaluation(test_gen, self.bag_level_uncertainty_model)
-
-            else:
-                uncertainty_metric = {}
+        if self.bag_level_uncertainty_model is not None:
+            uncertainty_metric = bag_level_evaluation(test_gen, self.bag_level_uncertainty_model)
+        else:
+            uncertainty_metric = {}
 
         if self.config['logging']['save_predictions']:
             with open(os.path.join(self.config['output_dir'], 'predictions.npy'), 'wb') as f:
