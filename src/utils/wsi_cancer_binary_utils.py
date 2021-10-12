@@ -8,6 +8,7 @@ def calc_wsi_cancer_binary_metrics(prediction_confidences, gt):
     metrics = {}
     prediction_confidences = prediction_confidences[...,1]
     predictions = prediction_confidences > 0.5
+    gt = np.argmax(gt, axis=-1)
 
     metrics['wsi_accuracy'] = accuracy_score(gt, predictions)
     metrics['wsi_cohens_quadratic_kappa'] = cohen_kappa_score(gt, predictions, weights='quadratic')
@@ -20,4 +21,8 @@ def calc_wsi_cancer_binary_metrics(prediction_confidences, gt):
     artifacts = {}
     artifacts['roc'] = roc
 
-    return metrics
+    conf_matrix = confusion_matrix(gt,
+                                   predictions,
+                                   labels=[0, 1])
+
+    return metrics, conf_matrix

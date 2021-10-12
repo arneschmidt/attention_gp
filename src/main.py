@@ -16,7 +16,7 @@ def main(config):
     devices = tf.config.experimental.list_physical_devices('GPU')
     tf.config.experimental.set_memory_growth(devices[0], True)
 
-    save_dir = config['data']['output_path']
+    save_dir = config['output_dir']
     os.makedirs(save_dir, exist_ok=True)
 
     data = Data(config['data'])

@@ -38,7 +38,7 @@ class Data():
         if self.config['type'] == 'binary':
             indices = self.wsi_df['slide'].isin(np.unique(bag_names_per_instance))
             bag_names = np.array(self.wsi_df['slide'].loc[indices])
-            bag_labels = np.array(self.wsi_df['P'].loc[indices])
+            bag_labels = tf.keras.utils.to_categorical(np.array(self.wsi_df['P'].loc[indices]))
         else:
             # TODO: find only wsi of the train/val/test split that is generated
             bag_names = np.unique(bag_names_per_instance)
