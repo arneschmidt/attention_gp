@@ -88,6 +88,12 @@ def build_model(config, data_dims, num_training_points):
             out = tf.reshape(out, [1, f.shape[1]])
         return out
 
+    def att_mean(x):
+        dims = x.shape[1]
+        x = tf.reduce_mean(x, axis=0)
+        out = tf.reshape(x, [1, dims])
+        return out
+
     def reshape_pre_mc_integration(x):
         out = tf.reshape(x, shape=[1, mc_samples, num_classes])
         return out
@@ -113,7 +119,9 @@ def build_model(config, data_dims, num_training_points):
     else:
         x = tf.keras.layers.Dense(config['model']['hidden_layer_size_att'], activation=config['model']['hidden_layer_act_att'])(f)
 
-    if config['model']['attention'] == 'gp':
+    att_type = config['model']['attention']
+
+    if att_type == 'gp':
         if config['model']['att_sigmoid']:
             x = tf.keras.layers.Activation('sigmoid')(x)
         # x = tf.keras.layers.Dense(128, activation='relu')(x)
@@ -139,12 +147,21 @@ def build_model(config, data_dims, num_training_points):
         x = tf.keras.layers.Dense(num_classes, activation='softmax', name='bag_softmax_a')(x)
         x = tf.keras.layers.Lambda(reshape_pre_mc_integration, name='bag_softmax')(x)
         output = tf.keras.layers.Lambda(mc_integration)(x)
-    else:
-        a = Mil_Attention(f.shape[1], output_dim=0, name='instance_attention')(x)
+    elif att_type == 'deterministic' or att_type == 'deterministic_gated':
+        if att_type == 'deterministic':
+            gated = False
+        elif att_type == 'deterministic_gated':
+            gated = True
+        a = Mil_Attention(f.shape[1], output_dim=0, name='instance_attention', use_gated=gated)(x)
         x = tf.keras.layers.Lambda(attention_multiplication)([a, f])
         # x = tf.keras.layers.Dense(64, activation='relu')(x)
         x = tf.keras.layers.Dense(num_classes, activation='softmax', name='bag_softmax_a')(x)
         output = tf.keras.layers.Lambda(reshape_final)(x)
+    elif att_type == 'baseline_mean':
+        x = tf.keras.layers.Lambda(att_mean, name='instance_attention')(x)
+        x = tf.keras.layers.Dense(num_classes, activation='softmax', name='bag_softmax_a')(x)
+        output = tf.keras.layers.Lambda(reshape_final)(x)
+
 
     model = tf.keras.Model(inputs=input, outputs=output, name="sgp_mil")
     instance_model = tf.keras.Model(inputs=model.inputs, outputs=model.get_layer('instance_attention').output)

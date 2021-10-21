@@ -1,6 +1,6 @@
 data:
-  dataset_config: ./dataset_dependent/cam16/dataset_config.yaml
-  artifact_dir: ./dataset_dependent/cam16/gp
+  dataset_config: ./dataset_dependent/sicapv2/dataset_config.yaml
+  artifact_dir: ./out
 
   col_feature_prefix: 'feature'
   col_instance_label: 'instance_label'
@@ -11,7 +11,7 @@ data:
   col_bag_cnn_probability: 'bag_cnn_probability'
 
 model:
-  attention: deterministic # deterministic, gp
+  attention: baseline_mean # deterministic, gp, deterministic_gated, baseline_mean
   class_weighted_loss: False
   hidden_layer_size_0: 128
   hidden_layer_size_1: 128
