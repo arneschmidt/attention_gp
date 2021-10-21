@@ -20,15 +20,22 @@ def main(config):
     os.makedirs(save_dir, exist_ok=True)
 
     data = Data(config['data'])
-    train_gen = data.generate_data('train')
-    val_gen = data.generate_data('val')
+    if not config['model']['load_model']:
+        train_gen = data.generate_data('train')
+        val_gen = data.generate_data('val')
+        n_training_points = len(train_gen)
+    else:
+        n_training_points = 100 # arbitrary, not used
     test_gen = data.generate_data('test')
 
     logger = MLFlowLogger(config)
     logger.config_logging()
 
-    model = Model(config, train_gen.images[0][0].shape, len(train_gen))
-    model.train(train_gen, val_gen)
+    model = Model(config, test_gen.images[0][0].shape, n_training_points)
+    if not config['model']['load_model']:
+        model.train(train_gen, val_gen)
+    else:
+        model.load()
     metrics, conf_matrices = model.test(test_gen)
     logger.test_logging(metrics)
 
