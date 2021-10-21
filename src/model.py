@@ -24,6 +24,8 @@ class Model:
         self.instance_model = instance_model
         self.bag_level_uncertainty_model = bag_level_uncertainty_model
 
+    def load(self):
+        self.model.load_weights(os.path.join(self.config['output_dir'], "models/model.h5"))
 
     def train(self, train_gen, val_gen):
         def scheduler(epoch, lr):
@@ -43,6 +45,9 @@ class Model:
                        callbacks=[callback_lr, callback_mlflow], class_weight=class_weights)
         if self.config['model']['metrics_for_model_saving'] != 'None':
             self.model.set_weights(callback_mlflow.best_weights)
+        if self.config['model']['save_model']:
+            callback_mlflow._save_model()
+
 
     def test(self, test_gen):
         predictions = self.model.predict(test_gen)

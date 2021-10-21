@@ -142,7 +142,7 @@ def build_model(config, data_dims, num_training_points):
     else:
         a = Mil_Attention(f.shape[1], output_dim=0, name='instance_attention')(x)
         x = tf.keras.layers.Lambda(attention_multiplication)([a, f])
-        x = tf.keras.layers.Dense(64, activation='relu')(x)
+        # x = tf.keras.layers.Dense(64, activation='relu')(x)
         x = tf.keras.layers.Dense(num_classes, activation='softmax', name='bag_softmax_a')(x)
         output = tf.keras.layers.Lambda(reshape_final)(x)
 
