@@ -109,10 +109,10 @@ def build_model(config, data_dims, num_training_points):
         f = tf.keras.layers.Dense(config['model']['hidden_layer_size_0'], activation='relu')(input)
 
     if config['model']['hidden_layer_size_1'] != 0:
-        f = tf.keras.layers.Dense(config['model']['hidden_layer_size_1'], activation='relu')(input)
+        f = tf.keras.layers.Dense(config['model']['hidden_layer_size_1'], activation='relu')(f)
 
     if config['model']['hidden_layer_size_2'] != 0:
-        f = tf.keras.layers.Dense(config['model']['hidden_layer_size_2'], activation='relu')(input)
+        f = tf.keras.layers.Dense(config['model']['hidden_layer_size_2'], activation='relu')(f)
 
     if config['model']['hidden_layer_size_att'] == 0:
         x = f

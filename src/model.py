@@ -20,6 +20,7 @@ class Model:
         self.n_training_points = n_training_points
         self.config = config
         model, instance_model, bag_level_uncertainty_model = build_model(config, data_dims, n_training_points)
+        print(model.summary())
         self.model = model
         self.instance_model = instance_model
         self.bag_level_uncertainty_model = bag_level_uncertainty_model
@@ -81,6 +82,9 @@ class Model:
         f.write(str(uncertainty_metric))
         f.close()
 
+        with open(os.path.join(self.config['output_dir'], 'model_summary.txt'), 'w') as fh:
+            # Pass the file handle in as a lambda function to make it callable
+            self.model.summary(print_fn=lambda x: fh.write(x + '\n'))
 
         print(metrics)
         print(conf_matrix)
