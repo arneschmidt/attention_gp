@@ -36,6 +36,7 @@ def main(config):
         model.train(train_gen, val_gen)
     else:
         model.load()
+    # model.instance_pred_out(test_gen, data.test_instance_labels, data.test_bag_names_per_instance, data.test_instance_names)
     metrics, conf_matrices = model.test(test_gen)
     logger.test_logging(metrics)
 

@@ -4,6 +4,7 @@ data:
 
   col_feature_prefix: 'feature'
   col_instance_label: 'instance_label'
+  col_instance_name: 'instance_name'
   col_cnn_prediction: 'cnn_prediction'
   col_bag_label: 'bag_label'
   col_bag_name: 'bag_name'

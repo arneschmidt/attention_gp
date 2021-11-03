@@ -12,14 +12,22 @@ class Data():
     def __init__(self, config):
         self.config = config
         self.wsi_df = pd.read_csv(os.path.join(self.config['input_path'], self.config['wsi_file']))
+        self.test_instance_labels = None
+        self.test_bag_names_per_instance = None
 
     def generate_data(self, split: str):
-        bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels = self.load(split)
+        bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels, instance_names = self.load(split)
         images, labels = self.prepare_bags(features, bag_names, bag_labels, bag_names_per_instance)
+
 
         if split == 'train':
             shuffle = True
+        elif split == 'val':
+            shuffle = False
         else:
+            self.test_instance_labels = instance_labels
+            self.test_bag_names_per_instance = bag_names_per_instance
+            self.test_instance_names = instance_names
             shuffle = False
 
         data_gen = DataGenerator(images, labels, shuffle)
@@ -34,7 +42,7 @@ class Data():
         elif split =='test':
             df = pd.read_csv(os.path.join(self.config['input_path'], self.config['test_file']))
 
-        features, bag_labels_per_instance, bag_names_per_instance, instance_labels = load_dataframe(df, self.config)
+        features, bag_labels_per_instance, bag_names_per_instance, instance_labels, instance_names = load_dataframe(df, self.config)
         if self.config['type'] == 'binary':
             indices = self.wsi_df['slide'].isin(np.unique(bag_names_per_instance))
             bag_names = np.array(self.wsi_df['slide'].loc[indices])
@@ -53,7 +61,7 @@ class Data():
                 raise Exception('Choose valid dataset type (data: dataset_type:')
             # bag_labels = np.array(self.wsi_df['isup_grade'][indices])
 
-        return bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels
+        return bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels, instance_names
 
     def prepare_bags(self, features, bag_names, bag_labels, bag_names_per_instance):
         bag_names = bag_names

@@ -4,12 +4,12 @@ import numpy as np
 
 
 def load_dataframe(df: pd.DataFrame, config: Dict):
-    train_with_instance_labels = False # only use if some day we want to train with instance labels
     # we try to automatically derive the column names
     col_feature_prefix = config['col_feature_prefix']
     col_bag_label = config['col_bag_label']
     col_bag_name = config['col_bag_name']
     col_instance_label = config['col_instance_label']
+    col_instance_name = 'instance_name'
 
     # find all feature columns
     col_features = []
@@ -24,9 +24,6 @@ def load_dataframe(df: pd.DataFrame, config: Dict):
 
     features = df[col_features].to_numpy().astype('float32')
 
-    pi = None
-    mask = None
-    Z = None
     if col_bag_label in df.columns:
         bag_labels_per_instance = df[col_bag_label].to_numpy().astype('int')
     else:
@@ -34,16 +31,15 @@ def load_dataframe(df: pd.DataFrame, config: Dict):
 
     if col_instance_label in df.columns:
         instance_labels = (df[col_instance_label].to_numpy().astype("int"))  # instance_label column
-        if train_with_instance_labels:
-            pi = np.random.uniform(0, 0.1, size=len(df))  # -1 for untagged
-            pi = np.where((0 == instance_labels), 0, pi)
-            pi = np.where((0 < instance_labels), 1, pi)
-
-            mask = np.where(instance_labels > -1, False, True)
     else:
         instance_labels = np.array([])
 
-    return features, bag_labels_per_instance, bag_names_per_instance, instance_labels
+    if col_instance_name in df.columns:
+        instance_name = (df[col_instance_name].to_numpy().astype("str"))  # instance_label column
+    else:
+        instance_name = np.array([])
+
+    return features, bag_labels_per_instance, bag_names_per_instance, instance_labels, instance_name
 
 
 def load_cnn_predictions(test_df, config):
