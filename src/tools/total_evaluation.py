@@ -41,6 +41,6 @@ std_cohens_kappa = np.std(np.array(cohens_kappas))
 metrics['mean_cohens_kappa'] = mean_cohens_kappa
 metrics['std_cohens_kappa'] = std_cohens_kappa
 
-save_metrics_and_conf_matrics(metrics, conf_matrix, unc_metrics=None, out_dir=out_dir, grading='GS')
+save_metrics_and_conf_matrics(metrics, conf_matrix, out_dir=out_dir, grading='GS')
 
 

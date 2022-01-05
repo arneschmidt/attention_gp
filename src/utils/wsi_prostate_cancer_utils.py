@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.metrics import cohen_kappa_score, confusion_matrix, f1_score, accuracy_score
+from sklearn.metrics import cohen_kappa_score, confusion_matrix, f1_score, accuracy_score, precision_score, recall_score
 
 def calc_wsi_prostate_cancer_metrics(gt, predictions):
     predictions = np.argmax(predictions, axis=-1)
@@ -9,6 +9,12 @@ def calc_wsi_prostate_cancer_metrics(gt, predictions):
     metrics_dict['test_cohens_quadratic_kappa'] = cohen_kappa_score(gt, predictions, weights='quadratic')
     metrics_dict['test_f1_score'] = f1_score(gt, predictions, average='macro')
     metrics_dict['test_accuracy'] = accuracy_score(gt, predictions)
+
+    binary_gt = np.where(gt > 0, 1, 0)
+    binary_predictions = np.where(predictions > 0, 1, 0)
+    metrics_dict['test_binary_f1_score'] = f1_score(binary_gt, binary_predictions)
+    metrics_dict['test_binary_precision'] = precision_score(binary_gt, binary_predictions)
+    metrics_dict['test_binary_recall'] = recall_score(binary_gt, binary_predictions)
     # confusion_matrices = {}
     #
     # confusion_matrices['wsi_isup_confusion_matrix'] = confusion_matrix(gt,

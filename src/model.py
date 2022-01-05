@@ -27,9 +27,15 @@ class Model:
         self.bag_level_uncertainty_model = bag_level_uncertainty_model
 
     def load(self):
+        """
+        Load weights of saved model that was previously trained.
+        """
         self.model.load_weights(os.path.join(self.config['output_dir'], "models/model.h5"))
 
     def train(self, train_gen, val_gen):
+        """
+        Train model from the scratch and save the weights.
+        """
         def scheduler(epoch, lr):
             if epoch < self.config["model"]["lr_decay_after_epoch"]:
                 return lr
@@ -52,6 +58,9 @@ class Model:
 
 
     def test(self, test_gen):
+        """
+        Test the model on independent test set.
+        """
         predictions = self.model.predict(test_gen)
         predictions = np.reshape(predictions, [-1, test_gen.labels[0].shape[0]])
         gt = test_gen.labels
@@ -62,19 +71,13 @@ class Model:
             # predictions = np.reshape(predictions, [-1, test_gen.labels[0].shape[0]])
             metrics, conf_matrix = calc_wsi_prostate_cancer_metrics(gt, predictions)
         if self.bag_level_uncertainty_model is not None:
-            uncertainty_metric = bag_level_evaluation(test_gen, self.bag_level_uncertainty_model)
-        else:
-            uncertainty_metric = {}
-        self._output_saving(predictions, gt, metrics, conf_matrix, uncertainty_metric)
+            bag_level_evaluation(test_gen, self.bag_level_uncertainty_model, self.config['output_dir'])
+
+        self._output_saving(predictions, gt, metrics, conf_matrix)
 
         return metrics, conf_matrix
 
     def _calculate_class_weights(self, train_gen):
-        """
-        Calculate class weights based on gt, pseudo and soft labels.
-        :param training_targets: gt, pseudo and soft labels (fused)
-        :return: class weight dict
-        """
         labels = np.argmax(train_gen.labels, axis=1)
         classes = np.arange(0, self.config['data']['num_classes'])
         class_weights_array = class_weight.compute_class_weight(
@@ -86,7 +89,7 @@ class Model:
             class_weights[class_id] = class_weights_array[class_id]
         return class_weights
 
-    def _output_saving(self, predictions, gt, metrics, conf_matrix, uncertainty_metric):
+    def _output_saving(self, predictions, gt, metrics, conf_matrix):
 
         if self.config['logging']['save_predictions']:
             with open(os.path.join(self.config['output_dir'], 'predictions.npy'), 'wb') as f:
@@ -95,7 +98,7 @@ class Model:
                 np.save(f, gt)
             # with open(os.path.join(self.config['output_dir'], 'metrics.txt'), 'wb') as f:
             #     f.write(str(metrics))
-        save_metrics_and_conf_matrics(metrics= metrics, conf_matrix=conf_matrix, unc_metrics=uncertainty_metric,
+        save_metrics_and_conf_matrics(metrics= metrics, conf_matrix=conf_matrix,
                                       out_dir=self.config['output_dir'], grading=self.config['data']['type'])
 
         with open(os.path.join(self.config['output_dir'], 'model_summary.txt'), 'w') as fh:

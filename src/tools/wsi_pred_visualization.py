@@ -19,7 +19,10 @@ mask_path = '~/datasets/Panda/Panda_patches_resized_test/masks/'
 # preds_path = './dataset_dependent/sicapv2/gp/split_test/instance_preds.csv'
 # image_path = '/home/arne/datasets/SICAPv2/images/'
 # mask_path = '/home/arne/datasets/SICAPv2/masks/'
-out_path = './out_wsi5/'
+out_path = './out_wsi11/'
+
+#
+
 
 dataset = 'panda'
 res = 512
@@ -83,7 +86,7 @@ for wsi_name in wsi_list:
     wsi_y_width = int((n_patches_y * res) / 2 + res)
 
     mgrid_pixels = np.mgrid[0:wsi_x_height, 0:wsi_y_width]
-    mgrid_preds = np.mgrid[0:n_patches_x, 0:n_patches_y] * (res/2)
+    mgrid_preds = np.mgrid[0:n_patches_x, 0:n_patches_y] * (res/2) + (res/2)
     # mgrid_preds = np.reshape(mgrid_preds, newshape=[n_patches_x, n_patches_y, 2])
     mean_grid = np.zeros(shape=[n_patches_x, n_patches_y])
     std_grid = np.zeros(shape=[n_patches_x, n_patches_y])
@@ -96,15 +99,15 @@ for wsi_name in wsi_list:
         pred_gt = np.zeros(shape=[wsi_x_height, wsi_y_width])
     else:
         gt = np.zeros(shape=[wsi_x_height, wsi_y_width, 3])
-        mean = np.ones(shape=[wsi_x_height, wsi_y_width])
-        std = np.ones(shape=[wsi_x_height, wsi_y_width])
+        mean = np.ones(shape=[wsi_x_height, wsi_y_width]) * 256
+        std = np.ones(shape=[wsi_x_height, wsi_y_width]) * 256
         pred_gt = np.zeros(shape=[wsi_x_height, wsi_y_width])
 
 
     mean_sub = np.min(wsi_preds['mean'])
     std_sub = np.min(wsi_preds['std'])
-    mean_factor = 1/(np.max(wsi_preds['mean']) - mean_sub) * 256
-    std_factor = 1/(np.max(wsi_preds['std']) - std_sub) * 256
+    mean_factor = 1/(np.max(wsi_preds['mean']) - mean_sub) * 120
+    std_factor = 1/(np.max(wsi_preds['std']) - std_sub) * 100
     # mean_sub = 0
     # std_sub = 0
     # mean_factor = 1/(np.max(wsi_preds['mean']) - mean_sub) * 256
@@ -139,7 +142,7 @@ for wsi_name in wsi_list:
         std[int(x_start + res / 4):int(x_stop - res / 4), int(y_start + res / 4):int(y_stop - res / 4)] = np.ones(
             [int(res / 2), int(res / 2)]) * ((np.array(pred_row['std']) - std_sub) * std_factor)
         pred_gt[int(x_start + res / 4):int(x_stop - res / 4), int(y_start + res / 4):int(y_stop - res / 4)] = np.ones(
-            [int(res / 2), int(res / 2)]) * ((np.array(pred_row['instance_labels'])) * 50)
+            [int(res / 2), int(res / 2)]) * ((np.array(pred_row['instance_labels']) > 0) * 256)
         mean_grid[x_pos, y_pos] = (np.array(pred_row['mean']) - mean_sub) * mean_factor
         std_grid[x_pos, y_pos] = ((np.array(pred_row['std']) - std_sub) * std_factor)
 
@@ -147,13 +150,13 @@ for wsi_name in wsi_list:
     std_grid = np.reshape(std_grid, newshape=[(n_patches_x)* (n_patches_y)])
     mgrid_preds = np.concatenate([np.expand_dims(mgrid_preds[0], axis=2), np.expand_dims(mgrid_preds[1], axis=2)], axis=2)
     mgrid_preds = np.reshape(mgrid_preds, newshape=[(n_patches_x)* (n_patches_y), 2])
-    mean_grid_out = griddata(mgrid_preds, mean_grid, (mgrid_pixels[0], mgrid_pixels[1]), method='cubic')
-    std_grid_out = griddata(mgrid_preds, std_grid, (mgrid_pixels[0], mgrid_pixels[1]), method='cubic')
+    mean_grid_out = griddata(mgrid_preds, mean_grid, (mgrid_pixels[0], mgrid_pixels[1]), method='linear', fill_value=0.0)
+    std_grid_out = griddata(mgrid_preds, std_grid, (mgrid_pixels[0], mgrid_pixels[1]), method='cubic', fill_value=0.0)
 
-    gt = ((gt < 100) * 256)
+    gt = (gt > 100)*50.0
     if dataset == 'sicap':
         gt = np.expand_dims(gt, 2)
-        gt = np.concatenate([np.ones_like(gt) * 256, gt, gt], 2)
+        gt = np.concatenate([gt, np.ones_like(gt) * 256, gt], 2)
         # mean = ((mean < 128) * 256)
         # mean = np.expand_dims(mean, 2)
         # mean = np.concatenate([np.ones_like(mean) * 256, mean, mean], 2)
@@ -161,14 +164,22 @@ for wsi_name in wsi_list:
         # std = np.expand_dims(std, 2)
         # std = np.concatenate([np.ones_like(std) * 256, std, std], 2)
 
+    gt_new = np.zeros_like(gt)
+    gt_new[:,:,0] = gt[:,:,2]
+    gt_new[:,:,1] = gt[:,:,0]
+    gt_new[:,:,2] = gt[:,:,1]
+    # gt_new[:,:,0] = gt[:,:,0]
+    # gt_new[:,:,1] = gt[:,:,1]
+    # gt_new[:,:,2] = gt[:,:,0]
+    gt = gt_new
 
-    assert np.max(gt) == 256
+    # assert np.max(gt) == 256
     # gt[:,:,1:2] = 0
-
-    wsi_plus_gt = blend(wsi, gt)
+    wsi = np.clip(wsi, a_min=0.0, a_max=256.0)
+    wsi_plus_gt = np.clip(wsi + gt, a_min=0.0, a_max=256.0)
     wsi_plus_mean = blend(wsi_plus_gt, mean)
     wsi_plus_std = blend(wsi_plus_gt, std)
-    wsi_plus_pred_gt = blend(wsi, pred_gt)
+    wsi_plus_pred_gt = np.clip(wsi + transform_into_rgb(mean_grid_out, (0, 1, 0)), a_min=0.0, a_max=256.0)
 
     mean_grid_out = transform_into_rgb(mean_grid_out, (1, 1, 1))
     # stdgrid_out = transform_into_rgb(std_grid_out, (256, 256, 0))
@@ -181,14 +192,15 @@ for wsi_name in wsi_list:
     # wsi_std = blend(wsi_plus_gt, std_grid_out)
     #
     #
-    io.imsave(os.path.join(out_path, wsi_name + '_meangrid.png'), wsi_meangrid_out)
+    # io.imsave(os.path.join(out_path, wsi_name + '_meangrid.png'), wsi_meangrid_out)
     # io.imsave(os.path.join(out_path, wsi_name + '_wsi_mean_std.png'), wsi_mean_std)
     # io.imsave(os.path.join(out_path, wsi_name + '_mean_std.png'), mean_std)
     # io.imsave(os.path.join(out_path, wsi_name + '_stdgrid.png'), std_grid_out)
     io.imsave(os.path.join(out_path, wsi_name + '.png'), wsi)
-    io.imsave(os.path.join(out_path, wsi_name + '_gt.png'), gt)
-    io.imsave(os.path.join(out_path, wsi_name + '_mean.png'), wsi_plus_mean)
-    io.imsave(os.path.join(out_path, wsi_name + '_std.png'), wsi_plus_std)
+    # io.imsave(os.path.join(out_path, wsi_name + '_gt.png'), gt)
+    io.imsave(os.path.join(out_path, wsi_name + '_gt.png'), wsi_plus_gt)
+    # io.imsave(os.path.join(out_path, wsi_name + '_mean.png'), wsi_plus_mean)
+    # io.imsave(os.path.join(out_path, wsi_name + '_std.png'), wsi_plus_std)
     io.imsave(os.path.join(out_path, wsi_name + '_pred_gt.png'), wsi_plus_pred_gt)
     # except:
     #     print('Error, skip WSI')

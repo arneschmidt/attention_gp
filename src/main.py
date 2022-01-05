@@ -4,12 +4,10 @@ import collections
 import yaml
 import argparse
 import tensorflow as tf
-import pandas as pd
 
 from model import Model
 from mlflow_log import MLFlowLogger
 from data import Data
-from evaluate import bag_level_evaluation, att_evaluation
 
 
 def main(config):
@@ -19,6 +17,7 @@ def main(config):
     save_dir = config['output_dir']
     os.makedirs(save_dir, exist_ok=True)
 
+    # load the data
     data = Data(config['data'])
     if not config['model']['load_model']:
         train_gen = data.generate_data('train')
@@ -28,15 +27,20 @@ def main(config):
         n_training_points = 100 # arbitrary, not used
     test_gen = data.generate_data('test')
 
+    # logger logs the parameters and metrics with mlflow
     logger = MLFlowLogger(config)
     logger.config_logging()
 
+    # create the model
     model = Model(config, test_gen.images[0][0].shape, n_training_points)
+
+    # train the model or load existing weights
     if not config['model']['load_model']:
         model.train(train_gen, val_gen)
     else:
         model.load()
-    # model.instance_pred_out(test_gen, data.test_instance_labels, data.test_bag_names_per_instance, data.test_instance_names)
+
+    # test the model on the test set, log final metrics
     metrics, conf_matrices = model.test(test_gen)
     logger.test_logging(metrics)
 
