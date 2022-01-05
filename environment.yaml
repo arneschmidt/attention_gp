@@ -46,7 +46,6 @@ dependencies:
   - oauthlib=3.1.0=py_0
   - openssl=1.1.1h=h7b6447c_0
   - opt_einsum=3.1.0=py_0
-  - pip=20.2.2=py38_0
   - protobuf=3.12.4=py38he6710b0_0
   - pyasn1=0.4.8=py_0
   - pyasn1-modules=0.2.8=py_0
@@ -91,6 +90,7 @@ dependencies:
     - gitpython==3.1.8
     - gorilla==0.3.0
     - gunicorn==20.0.4
+    - imageio==2.9.0
     - isodate==0.6.0
     - itsdangerous==1.1.0
     - jdcal==1.4.1
@@ -104,19 +104,23 @@ dependencies:
     - mil==1.0.5
     - mlflow==1.11.0
     - msrest==0.6.19
+    - networkx==2.6.3
     - numpy==1.18.5
     - openpyxl==3.0.5
     - pandas==1.1.2
     - pillow==7.2.0
+    - pip==21.3.1
     - prometheus-client==0.8.0
     - prometheus-flask-exporter==0.18.0
     - pyparsing==2.4.7
     - python-dateutil==2.8.1
     - python-editor==1.0.4
     - pytz==2020.1
+    - pywavelets==1.1.1
     - pyyaml==5.3.1
     - querystring-parser==1.2.4
-    - scikit-learn==0.23.2
+    - scikit-image==0.18.3
+    - scikit-learn==1.0.1
     - scipy==1.4.1
     - sklearn==0.0
     - smmap==3.0.4
@@ -131,6 +135,7 @@ dependencies:
     - tensorflow-gpu==2.3.0
     - tensorflow-probability==0.11.1
     - threadpoolctl==2.1.0
+    - tifffile==2021.10.12
     - typeguard==2.9.1
     - websocket-client==0.57.0
     - xlrd==1.2.0

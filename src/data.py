@@ -9,23 +9,39 @@ from utils.wsi_prostate_cancer_utils import get_gleason_score_and_isup_grade
 
 
 class Data():
+    """
+    This object contains loaded data tables and the data generators for training, validation and testing
+    """
     def __init__(self, config):
         self.config = config
         self.wsi_df = pd.read_csv(os.path.join(self.config['input_path'], self.config['wsi_file']))
+        self.test_instance_labels = None
+        self.test_bag_names_per_instance = None
 
     def generate_data(self, split: str):
-        bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels = self.load(split)
+        """
+        create data generator for train, validation or test split ('train', 'val' or 'test')
+        """
+        bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels, instance_names = self.load(split)
         images, labels = self.prepare_bags(features, bag_names, bag_labels, bag_names_per_instance)
 
         if split == 'train':
             shuffle = True
+        elif split == 'val':
+            shuffle = False
         else:
+            self.test_instance_labels = instance_labels
+            self.test_bag_names_per_instance = bag_names_per_instance
+            self.test_instance_names = instance_names
             shuffle = False
 
         data_gen = DataGenerator(images, labels, shuffle)
         return data_gen
 
     def load(self, split: str):
+        """
+        Load the dataframes for specific data split ('train', 'val' or 'test') into np arrays.
+        """
         df = None
         if split =='train':
             df = pd.read_csv(os.path.join(self.config['input_path'], self.config['train_file']))
@@ -34,7 +50,7 @@ class Data():
         elif split =='test':
             df = pd.read_csv(os.path.join(self.config['input_path'], self.config['test_file']))
 
-        features, bag_labels_per_instance, bag_names_per_instance, instance_labels = load_dataframe(df, self.config)
+        features, bag_labels_per_instance, bag_names_per_instance, instance_labels, instance_names = load_dataframe(df, self.config)
         if self.config['type'] == 'binary':
             indices = self.wsi_df['slide'].isin(np.unique(bag_names_per_instance))
             bag_names = np.array(self.wsi_df['slide'].loc[indices])
@@ -53,9 +69,12 @@ class Data():
                 raise Exception('Choose valid dataset type (data: dataset_type:')
             # bag_labels = np.array(self.wsi_df['isup_grade'][indices])
 
-        return bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels
+        return bag_names, bag_labels, features, bag_labels_per_instance, bag_names_per_instance, instance_labels, instance_names
 
     def prepare_bags(self, features, bag_names, bag_labels, bag_names_per_instance):
+        """
+        Create MIL bags.
+        """
         bag_names = bag_names
         images = []
         labels = []
@@ -80,27 +99,5 @@ class Data():
         features = features[selected_ids]
 
         return features
-
-
-
-    # def _prepare_data(self, ds, features, bag_names_per_instance):
-    #     def _fill_the_bags(x, y):
-    #         bag_feat = features[bag_names_per_instance==x]
-    #         x = bag_feat
-    #         return x, y
-    #
-    #     ds = ds.cache()
-    #     # ds_train = ds_train.shuffle(ds_info.splits['train'].num_examples)
-    #     ds = ds.batch(1)
-    #     ds = ds.map(lambda x, y: _fill_the_bags(x, y))
-    #     # ds = ds.map(lambda x, y: _reshape(x, y))
-    #     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
-    #     return ds
-    #
-    # def fill_the_bags(self, data_generator, features, bag_names_per_instance):
-    #     for x, y in data_generator:
-    #         bag_feat = tf.convert_to_tensor(features[bag_names_per_instance == x], dtype=tf.float32)
-    #         x = bag_feat
-    #         yield x, y
 
 

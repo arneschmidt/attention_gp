@@ -152,19 +152,19 @@ def build_model(config, data_dims, num_training_points):
             gated = False
         elif att_type == 'deterministic_gated':
             gated = True
-        a = Mil_Attention(f.shape[1], output_dim=0, name='instance_attention', use_gated=gated)(x)
+        a = Mil_Attention(f.shape[1], output_dim=0, name='instance_softmax', use_gated=gated)(x)
         x = tf.keras.layers.Lambda(attention_multiplication)([a, f])
         # x = tf.keras.layers.Dense(64, activation='relu')(x)
         x = tf.keras.layers.Dense(num_classes, activation='softmax', name='bag_softmax_a')(x)
         output = tf.keras.layers.Lambda(reshape_final)(x)
     elif att_type == 'baseline_mean':
-        x = tf.keras.layers.Lambda(att_mean, name='instance_attention')(x)
+        x = tf.keras.layers.Lambda(att_mean, name='instance_softmax')(x)
         x = tf.keras.layers.Dense(num_classes, activation='softmax', name='bag_softmax_a')(x)
         output = tf.keras.layers.Lambda(reshape_final)(x)
 
 
     model = tf.keras.Model(inputs=input, outputs=output, name="sgp_mil")
-    instance_model = tf.keras.Model(inputs=model.inputs, outputs=model.get_layer('instance_attention').output)
+    instance_model = tf.keras.Model(inputs=model.inputs, outputs=model.get_layer('instance_softmax').output)
 
     if config['model']['attention'] == 'gp':
         bag_level_uncertainty_model =  tf.keras.Model(inputs=model.inputs, outputs=model.get_layer('bag_softmax').output)
