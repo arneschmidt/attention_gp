@@ -48,7 +48,7 @@ os.makedirs(out_path, exist_ok=True)
 wsi_list_df = np.unique(test_df['wsi'])
 wsi_list_preds = np.unique(preds['bag_name'])
 wsi_list = [np.intersect1d(wsi_list_df, wsi_list_preds)[args.wsi]]
-wsi_list = ['1bf0cb1e3f0b2ce35b9b0a406cd225c5']
+# wsi_list = ['1bf0cb1e3f0b2ce35b9b0a406cd225c5']
 print(wsi_list)
 
 def blend(image1, image2, alpha=0.5):

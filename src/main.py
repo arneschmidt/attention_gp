@@ -1,3 +1,7 @@
+# TODO
+# perform ablation studies
+# record learning curve
+
 import os
 import collections
 # os.environ["CUDA_VISIBLE_DEVICES"]="-1"
