@@ -73,8 +73,8 @@ class Model:
         else:
             # predictions = np.reshape(predictions, [-1, test_gen.labels[0].shape[0]])
             metrics, conf_matrix = calc_wsi_prostate_cancer_metrics(gt, predictions)
-        if self.bag_level_uncertainty_model is not None and self.config['logging']['high_conf_metrics']:
-            bag_level_evaluation(test_gen, self.bag_level_uncertainty_model, self.config['output_dir'])
+        # if self.bag_level_uncertainty_model is not None:
+        #     bag_level_evaluation(test_gen, self.bag_level_uncertainty_model, self.config['output_dir'])
 
         metrics['inf_time'] = (end_t-start_t)/len(test_gen)
         self._output_saving(predictions, gt, metrics, conf_matrix)
