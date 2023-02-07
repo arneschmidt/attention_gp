@@ -36,3 +36,4 @@ logging:
   save_predictions: True
   run_name: test_run
   tracking_url: ./mlruns
+  high_conf_metrics: False

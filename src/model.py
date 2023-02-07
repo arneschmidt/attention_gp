@@ -1,4 +1,5 @@
 import os
+import time
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -49,7 +50,7 @@ class Model:
             class_weights = self._calculate_class_weights(train_gen)
         else:
             class_weights = None
-        self.model.fit(train_gen, epochs=int(self.config['model']['epochs']), validation_data=val_gen,
+        history = self.model.fit(train_gen, epochs=int(self.config['model']['epochs']), validation_data=val_gen,
                        callbacks=[callback_lr, callback_mlflow], class_weight=class_weights)
         if self.config['model']['metrics_for_model_saving'] != 'None':
             self.model.set_weights(callback_mlflow.best_weights)
@@ -61,7 +62,9 @@ class Model:
         """
         Test the model on independent test set.
         """
+        start_t = time.time()
         predictions = self.model.predict(test_gen)
+        end_t = time.time()
         predictions = np.reshape(predictions, [-1, test_gen.labels[0].shape[0]])
         gt = test_gen.labels
         if self.config['data']['type'] == 'binary':
@@ -70,9 +73,10 @@ class Model:
         else:
             # predictions = np.reshape(predictions, [-1, test_gen.labels[0].shape[0]])
             metrics, conf_matrix = calc_wsi_prostate_cancer_metrics(gt, predictions)
-        if self.bag_level_uncertainty_model is not None:
-            bag_level_evaluation(test_gen, self.bag_level_uncertainty_model, self.config['output_dir'])
+        # if self.bag_level_uncertainty_model is not None:
+        #     bag_level_evaluation(test_gen, self.bag_level_uncertainty_model, self.config['output_dir'])
 
+        metrics['inf_time'] = (end_t-start_t)/len(test_gen)
         self._output_saving(predictions, gt, metrics, conf_matrix)
 
         return metrics, conf_matrix
@@ -128,5 +132,8 @@ class Model:
         df['mean'] = mean_concat
         df['std'] = std_concat
         df.to_csv(os.path.join(self.config['output_dir'], 'instance_preds.csv'))
+
+
+
 
 

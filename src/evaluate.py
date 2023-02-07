@@ -48,7 +48,7 @@ def bag_level_evaluation(test_gen, bag_level_uncertainty_model: tf.keras.Model, 
     """
     Evaluate performance on bag level (predictions and uncertainty estimation)
     """
-
+    os.makedirs(out_dir, exist_ok=True)
     std_threshold = 0.02
 
     n = len(test_gen)

@@ -1,6 +1,6 @@
 data:
   dataset_name: att_sicapv2
-  input_path: ./input/sicapv2/feature_predictions_split1/
+  input_path: ./input/sicapv2/features_128_dims/feature_predictions_split1/
   train_file: Train.csv
   val_file: Val.csv
   test_file: Test.csv
